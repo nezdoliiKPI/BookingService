@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth & Registration</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            width: 400px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            cursor: pointer;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: #e6e6e6;
+            transition: background 0.3s;
+        }
+
+        .tab.active {
+            background: #ffffff;
+            font-weight: bold;
+            border-bottom: 2px solid #4caf50;
+        }
+
+        .form {
+            display: none;
+            padding: 20px;
+        }
+
+        .form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form button {
+            width: 100%;
+            padding: 10px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form button:hover {
+            background: #45a049;
+        }
+
+        /* #login-btn {
+            width: 100%;
+            padding: 10px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #login-btn:hover {
+            background: #45a049;
+        } */
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Login</div>
+            <div class="tab" data-tab="register">Sign In</div>
+        </div>
+        <div class="form active" id="login">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Enter your password">
+            </div>
+            <button id="login-btn">Login</button>
+        </div>
+
+        
+        <div class="form" id="register">
+            <div class="form-group">
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="register-password">Password</label>
+                <input type="password" id="register-password" placeholder="Enter your password">
+            </div>
+            <div class="form-group">
+                <input type="password" id="register-password-again" placeholder="Enter your password again">
+            </div>
+            <div class="form-group">
+                <label for="register-name">Name</label>
+                <input type="text" id="register-name" placeholder="Enter your name">
+            </div>
+            <div class="form-group">
+                <label for="register-surname">Surname</label>
+                <input type="text" id="register-surname" placeholder="Enter your surname">
+            </div>
+            <div class="form-group">
+                <label for="register-card">Card Number</label>
+                <input type="text" id="register-card" placeholder="Enter your card number">
+            </div>
+            <button id="register-btn">Accept</button>
+        </div>
+    </div>
+</body>
+<script>
+    const tabs = document.querySelectorAll('.tab');
+    const forms = document.querySelectorAll('.form');
+
+    const base_url = "http://127.0.0.1:8080";
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+
+    function login(email, password) {
+        url = base_url + "/api/user/log-in";
+
+        const headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+        headers.append('Authorization', 'Basic ' + btoa(email + ':' + password));
+
+        fetch(url, {
+            method: 'GET',
+            headers: headers
+        })
+        .then(response => response.json()) // Если ожидается JSON
+        .then(data => {
+            console.log(data);
+            if (data.userRole == "USER") {
+                saveUserData(data.email, data.password);
+                window.location.assign(base_url + "/pages/main-page");
+            }
+            else if (data.userRole == "ADMIN") {
+                saveUserData(data.email, data.password, "AdminData");
+                window.location.assign(base_url + "/pages/admin/posts");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message) {
+                alert('Користувача з такими данними не існує');
+            } else {
+                alert('Відбулася невідома помилку');
+            }
+        });
+    }
+
+    function signUp(email, password, name, surname, cardCode) {
+        url = base_url + "/api/user/sign-up";
+
+        const headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+
+        const data = {
+            email: email,
+            password: password,
+            name: name,
+            surname: surname,
+            cardCode: cardCode
+        };
+
+        return fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            alert('Реєстарція пройшла успішно');
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            return true;
+        })
+        .catch(error => {
+            console.error('Error:', error.message);
+            if (error.message.includes('409')) {
+                alert('Користувач з таким email або password вже існує');
+            }
+            else if (error.message.includes('400')) {
+                alert('Введено некоректні дані');
+            } else {
+                alert('Відбулася невідома помилка');
+            }
+            return false;
+        });
+        return false;
+    }
+
+    document.getElementById('login-btn').addEventListener('click', async function () {
+        const email = document.querySelector('#login-email').value;
+        const password = document.querySelector('#login-password').value;
+        
+        login(email, password);
+    });
+
+    document.getElementById('register-btn').addEventListener('click', async function () {
+        const email = document.querySelector('#register-email').value;
+        const password = document.querySelector('#register-password').value;
+        const passwordAgain = document.querySelector('#register-password-again').value;
+        const name = document.querySelector('#register-name').value;
+        const surname = document.querySelector('#register-surname').value;
+        const cardNumber = document.querySelector('#register-card').value;
+
+        if (password != passwordAgain) {
+            alert('Введені паролі не співпадають');
+            return;
+        }
+
+        let result = await signUp(email, password, name, surname, cardNumber);
+        if (result == true) {
+            location.reload()
+        }
+    });
+
+    function saveUserData(email, pass, dataKey = "UserData") {
+        sessionStorage.removeItem(dataKey);
+        sessionStorage.setItem(dataKey, JSON.stringify({ email: email, password: pass }));
+
+        console.log(email)
+        console.log(pass)
+    }
+
+</script>
+</html>

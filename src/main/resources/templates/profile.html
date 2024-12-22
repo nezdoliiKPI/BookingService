@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+            /* display: grid; */
+            place-items: center;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .profile {
+            max-width: 400px;
+            margin: auto;
+
+            border-radius: 20px;
+            padding: 30px;
+            background-color: #d4edda;
+            width: 100%;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 95%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .logout-btn {
+            background-color: #dca735;
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+        }
+        h4 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="/pages/post-list">Post List</a>
+        <a href="/pages/booking-list">Booking List</a>
+        <a href="/pages/main-page">Main Page</a>
+    </div>
+    <h4 class="mainLabel">Профіль користувача</h4>
+
+<div class="profile">
+    <form id="profile-form">
+        <div class="form-group">
+            <label id="profile-email">Email</label>
+            <input type="text" id="email" >
+        </div>
+        <div class="form-group">
+            <label id="profile-password">Email</label>
+            <input type="text" id="password" >
+        </div>
+        <div class="form-group">
+            <label id="profile-name">Name</label>
+            <input type="text" id="name">
+        </div>
+        <div class="form-group">
+            <label id="profile-surname">Surname</label>
+            <input type="text" id="surname">
+        </div>
+        <div class="form-group">
+            <label id="profile-card">Card Number</label>
+            <input type="text" id="card">
+        </div>
+        <div class="form-group">
+            <label id="profile-card">Yout Owner Rate</label>
+            <input type="text" id="rate" disabled>
+        </div>
+    </form>
+    <button id="save-profile-btn" class="button">Save Changes</button>
+    <button id="logout-btn" class="logout-btn">Logout</button>
+    <button id="delete-btn" class="delete-btn">Delete Account</button>
+</div>
+
+<script>
+    let id;
+    let email;
+    let password;
+
+    const base_url = "http://127.0.0.1:8080";
+
+    if (sessionStorage.getItem("UserData") != null) {
+        let data = JSON.parse(sessionStorage.getItem("UserData"));
+        email = data.email ;
+        password = data.password;
+    }
+    else {
+        window.location.href = "/pages/login";
+    }
+    document.addEventListener('DOMContentLoaded', async () => {
+        await populateProfileForm();
+    });
+
+    // Save profile data
+    async function saveProfileData() {
+        url = base_url + "/api/user/update";
+        // Get updated values from the form
+        const updatedData = {
+            email:document.getElementById("email").value,
+            password: document.getElementById('password').value,
+            name: document.getElementById("name").value,
+            surname: document.getElementById("surname").value,
+            cardCode: document.getElementById("card").value
+        };
+
+        
+
+        const headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+        headers.append('Authorization', 'Basic ' + btoa(email + ':' + password));
+
+        await fetch(url, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(updatedData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            alert("Profile updated successfully!");
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            saveUserData(data.email, data.password);
+        })
+        .catch(error => {
+            console.error('Error:', error.message);
+            if (error.message.includes('409')) {
+                alert('Користувач з таким email або password вже існує');
+            }
+            else if (error.message.includes('400')) {
+                alert('Введено некоректні дані');
+            } else {
+                alert('Відбулася невідома помилка');
+            }
+        });
+
+        location.reload();
+    }
+    
+    async function populateProfileForm() {
+        userData = await login(email, password);
+        console.log(userData);
+        document.getElementById('email').value = userData.email.toString();
+        document.getElementById('password').value = userData.password.toString();
+        document.getElementById('name').value = userData.name.toString();
+        document.getElementById('surname').value = userData.surname.toString();
+        document.getElementById('card').value = userData.cardCode.toString();
+        document.getElementById('rate').value = "User not rated";
+        if (userData.ownerScore != null) {
+            document.getElementById('rate').value = userData.ownerScore.toString();
+        }
+
+        id = userData.userId;
+    }
+
+    async function login(email, password) {
+        url = base_url + "/api/user/log-in";
+
+        const headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+        headers.append('Authorization', 'Basic ' + btoa(email + ':' + password));
+
+        try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Користувача з такими данними не існує');
+        throw error; // или return null; в зависимости от того, что вы хотите сделать при ошибке
+    }
+        return null;
+    }
+
+    function logout() {
+        console.log("Logging out...");
+        sessionStorage.removeItem('UserData');
+        window.location.href = "/pages/login";
+    }
+
+    // Event listeners
+    document.getElementById("save-profile-btn").addEventListener("click", saveProfileData);
+    document.getElementById("logout-btn").addEventListener("click", logout);
+
+    document.getElementById("delete-btn").addEventListener("click", async function () {
+        if (!confirm("Are you sure you want to delete your account?")) {
+            return;
+        }
+
+        url = base_url + "/api/user/delete?id=" + id.toString();
+
+        const headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+        headers.append('Authorization', 'Basic ' + btoa(email + ':' + password));
+
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: headers
+            });
+
+            if (response.status != 204) {
+                window.location.assign(base_url + "/pages/login");
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.message) {
+                        errorMessage += ` - ${errorData.message}`;
+                    }
+                } catch (jsonError) {
+                }
+                throw new Error(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Виникла помилка: ${error.message}`);
+        }
+        window.location.assign(base_url + "/pages/login");
+    });
+
+    function saveUserData(email, pass) {
+        dataKey = "UserData";
+
+        sessionStorage.removeItem(dataKey);
+        sessionStorage.setItem(dataKey, JSON.stringify({ email: email, password: pass }));
+
+        console.log(email)
+        console.log(pass)
+    }
+
+</script>
+
+</body>
+</html>

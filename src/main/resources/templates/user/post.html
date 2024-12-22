@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Rental Listing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f4f4f4;
+            line-height: 1.6;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 1100px;
+            margin: 20px auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        header {
+            display: flex;
+            flex-direction: column;
+            flex:1;
+            padding: 20px;
+            border: 3px solid #000000;
+            border-radius: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            margin-top: 20px;
+            margin-right: 20px;
+        }
+        .postHeader{
+            display: flex;
+            flex-direction: row;
+        }
+        header h1 {
+            font-size: 1.5em;
+        }
+        .image-gallery {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            width: 75%;
+        }
+        .image-gallery img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .thumbnail-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .thumbnail-container img {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .thumbnail-container img:hover, .thumbnail-container img.active {
+            border-color: #333;
+        }
+        .details {
+            padding: 20px;
+        }
+        .details h2 {
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        .description {
+            margin-top: 15px;
+        }
+        .reviews {
+            padding: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .review-item {
+            margin-bottom: 15px;
+        }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* Выравнивает элементы по горизонтали вправо */
+            margin-top: 15px;
+            height: 100%;
+            justify-content: flex-end; /* Выравнивает элементы вниз по вертикали */
+        }
+        .actions button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .actions button:hover {
+            background-color: #555;
+        }
+        .object-description {
+            margin-bottom: 8px;
+        }
+        .object-address {
+            font-style: italic;
+            margin-top: 8px;
+        }
+        .image-gallery {
+            width: 75%; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .main-image {
+            max-width: 100%;
+            max-height: 100%;
+            margin: 0;
+            padding: 0;
+            width: auto;
+            height: auto;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-content h2 {
+            margin-bottom: 15px;
+        }
+        .modal-content .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .modal-content .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .modal-content .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .accept-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .accept-button:hover {
+            background-color: #218838;
+        }
+        .cancel-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .cancel-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="modal" id='booking-modal'>
+        <div class="modal-content">
+            <h2>Fill the Booking Form</h2>
+            <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" id="booking-start-date">
+            </div>
+            <div class="form-group">
+                <label>End Date:</label>
+                <input type="date" id="booking-end-date">
+            </div>
+            <div class="modal-buttons">
+                <button class="accept-button" onclick="acceptBooking()">Accept</button>
+                <button class="cancel-button" onclick="closeModal('booking-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <a href="/pages/post-list">Post List</a>
+        <a href="/pages/booking-list">Booking List</a>
+        <a href="/pages/main-page">Main Page</a>
+        <a href="/pages/profile">Profile</a>
+    </div>
+
+    <div class="container">
+        <div class="postHeader">
+            <section class="image-gallery">
+                <img class ="main-image" id="main-image" src="https://via.placeholder.com/800x600" alt="Property Image">
+                <div class="thumbnail-container" id = 'thumbnail-container'>
+                    <!-- <img src="https://via.placeholder.com/800x600" onclick="changeImage(this)" alt="Thumbnail 1">
+                    <img src="https://via.placeholder.com/800x600" onclick="changeImage(this)" alt="Thumbnail 2">
+                    <img src="https://via.placeholder.com/800x600" onclick="changeImage(this)" alt="Thumbnail 3">
+                    <img src="https://via.placeholder.com/800x600" onclick="changeImage(this)" alt="Thumbnail 4"> -->
+                </div>
+            </section>
+            <header>
+                <h1>Title</h1>
+                <div id="price">Cost per day: </div>
+                <div id="owner-rate">Owner Rate: </div>
+                <div id="post-rate">Post Rate: </div>
+                <div class="actions">
+                    <button id="booking-btn" onclick="showModal('booking-modal')">Book Now</button>
+                </div>
+            </header>
+        </div>
+        <div>
+            <section class="details">
+                <h2>Description</h2>
+                <div class="object-address" id="object-address">
+                    Address:
+                </div>
+                <div class="object-details">
+                    <strong>Type:</strong> <span id="type">aaaa</span><br>
+                    <strong>Total area:</strong> <span id="area">aaaa</span><br>
+                    <strong>Available from:</strong> <span id="dates">aaaa</span><br>
+                </div>
+                <p class="description", id="description">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus non nisi ut odio vulputate dapibus. Aliquam erat volutpat. Nam non neque libero.
+                </p>
+            </section>
+            <section class="reviews" id = "reviews">
+                <h2>Reviews</h2>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const base_url = "http://127.0.0.1:8080";
+
+        outPost(getPost(getPostId()));
+        getReviews(getPostId());
+
+        function getPostId() {
+            let postId;
+            dataKey = "postId";
+            if (sessionStorage.getItem(dataKey) != null) {
+                postId = Number(sessionStorage.getItem(dataKey));
+            }
+            else {
+                window.location.href = "/pages/main-page";
+            }
+            return postId;
+        }
+
+        async function getPost(postId) {
+            let url = base_url + '/api/post?id=' + postId.toString();
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const data = await response.json();
+                console.log(data);
+                return data;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return 0;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return null;
+            }
+        }
+
+        async function getUserRate(userId) {
+            url = base_url + '/api/user/score?user-id=' + userId;
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                let data = await response.text();
+                if(data == ""){
+                    data = null;
+                }
+                console.log(data);
+                return data;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return null;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return null;
+            }
+        }
+
+        async function outPost(post) {
+            post = await post;
+            loadPhotos(post.imageKeys);
+
+            document.getElementById('price').textContent = "Cost per day: " + post.costPerDay.toString();
+
+            const rate = await getUserRate(post.land.ownerId); 
+            if (rate == null) {
+                document.getElementById('owner-rate').textContent = "Owner Rate: " + "not rated";
+            }
+            else {
+                document.getElementById('owner-rate').textContent = "Owner Rate: " + rate.toString() + "/10";
+            }
+
+            if (post.score == null) {
+                document.getElementById('post-rate').textContent = "Post Rate: " + "not rated";
+            }
+            else {
+                document.getElementById('post-rate').textContent = "Post Rate: " + post.score.toString() + "/10";
+            }
+            
+            document.getElementById('description').textContent = post.land.description;
+            document.getElementById('type').textContent = post.land.type.toLowerCase();
+            document.getElementById('area').textContent = post.land.totalArea.toString() +  "(m²)";
+            document.getElementById('dates').textContent = post.minDate + " to " +  post.maxDate;
+            document.getElementById('object-address').textContent = 
+                "Address: " +
+                post.land.address.streetNumber + " " +
+                post.land.address.street + " " +
+                post.land.address.city + " " +
+                post.land.address.state + " " +
+                post.land.address.postalCode;
+
+            
+        }
+
+        function changeImage(container) {
+            const mainImage = document.getElementById('main-image');
+
+            const previousImageSrc = mainImage.src;
+            mainImage.src = container.src;
+            container.src = previousImageSrc;
+        }
+
+        async function getReviews(postId) {
+
+            url = base_url + '/api/review/post?post-id=' + postId.toString();
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const data = await response.json();
+                console.log(data);
+                displayReviews(data);
+                return data.length;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return 0;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return 0;
+            }
+        }
+
+        async function displayReviews(data) {
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                // Create a container for each object
+                const container = document.createElement("div");
+                container.className = "review-item";
+                
+                // Await the renderObject to ensure sequential execution
+                await renderReview(item, container);
+
+                // Append the container to the target div
+                document.getElementById('reviews').appendChild(container);
+            }
+        }
+
+        async function renderReview(item, container) {
+            container.innerHTML = `
+                <p><strong>Author:</strong> ${item.authorName}</p>
+                <p>${item.description}</p>
+                <div class="stars">Rate: ${item.rate}/10</div>
+            `;
+        }
+
+        async function loadPhotos(keys) {
+            let photos = new Array();
+
+            for (let index = 0; index < keys.length; index++) {
+                let photo = await downloadPhoto(keys[index]);
+                photos.push(photo);
+            }
+
+            await display(photos);
+        }
+
+        async function downloadPhoto(key) {
+            url = base_url + '/api/post/photo?key=' + encodeURIComponent(key);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'image/jpeg'
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return await response.blob();
+        }
+
+        async function display(photos) {
+            for (let index = 0; index < photos.length; index++) {
+                let imageUrl = URL.createObjectURL(photos[index]);
+
+                console.log('URL for image:', imageUrl);
+                console.log('Blob for index', index, ':', photos[index]);
+
+                if (index == 0) {
+                    document.getElementById('main-image').src = imageUrl;
+                }
+                else {
+                    const container = document.createElement("img");
+                    container.src = imageUrl;
+                    container.onclick = () => changeImage(container);
+                    container.alt= "Thumbnail " + index;
+
+                    const thumbnailContainer = document.getElementById('thumbnail-container');
+                    if (thumbnailContainer) {
+                        thumbnailContainer.appendChild(container);
+                    } else {
+                        console.error('Element with ID "thumbnail-container" not found');
+                    }
+                }
+            }
+        }
+
+
+        function showModal(elemId) {
+            document.getElementById(elemId).style.display = 'flex';
+        }
+
+        function closeModal(elemId) {
+            document.getElementById(elemId).style.display = 'none';
+        }
+
+        async function acceptBooking() {
+            const startDate = document.getElementById('booking-start-date').value;
+            const endDate = document.getElementById('booking-end-date').value;
+            const postId = getPostId();
+
+            let url = base_url + '/api/booking/create';
+            
+            const data = {
+                postId: postId,
+                startDate: startDate,
+                endDate: endDate
+            };
+
+            let email;
+            let password;
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let userData = JSON.parse(sessionStorage.getItem("UserData"));
+                email = userData.email;
+                password = userData.password;
+            }
+            else{
+                window.location.assign(base_url + "/pages/login");
+            }
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+            headers.append('Authorization', 'Basic ' + btoa(email + ':' + password));
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body:JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                console.log(result);
+                alert('Оренда зареєстрована успішно!');
+                window.location.href = "/pages/booking-list";
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    alert('Введено некоректні дані!');
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+            }
+
+            document.getElementById("review-modal").style.display = "none";
+        }
+
+        function acceptAction() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            if (name && email) {
+                alert(`Form submitted:\nName: ${name}\nEmail: ${email}`);
+                closeModal();
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+    </script>
+</body>
+</html>

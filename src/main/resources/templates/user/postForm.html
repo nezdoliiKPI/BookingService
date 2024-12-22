@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Rental Listing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 95%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            resize: none;
+        }
+        .form-group input[type="file"] {
+            padding: 5px;
+        }
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .form-buttons button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-buttons .submit-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .form-buttons .submit-btn:hover {
+            background-color: #218838;
+        }
+        .form-buttons .cancel-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .form-buttons .cancel-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Post</h1>
+        <form id="rentalForm">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" placeholder="Enter the title" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="4" placeholder="Enter the description" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <div>
+                    <input type="text" id="streetNumber" name="streetNumber" placeholder="Enter the street number" required>
+                    <input type="text" id="street" name="street" placeholder="Enter the street name" required>
+                    <input type="text" id="city" name="city" placeholder="Enter the city name" required>
+                    <input type="text" id="state" name="state" placeholder="Enter the state name" required>
+                    <input type="text" id="postalCode" name="postalCode" placeholder="Enter the postal code" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="area">Area (in m²):</label>
+                <input type="number" id="area" name="area" placeholder="Enter the area" required>
+            </div>
+
+            <div class="form-group">
+                <label for="propertyType">Type:</label>
+                <select id="propertyType" name="propertyType" required>
+                    <option value="apartment">Apartment</option>
+                    <option value="house">House</option>
+                    <option value="villa">Villa</option>
+                    <option value="studio">Studio</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price per day (in $):</label>
+                <input type="number" id="costPerDay" name="price" placeholder="Enter the price per day" required>
+            </div>
+
+            <div class="form-group">
+                <label for="startDate">Available from:</label>
+                <input type="date" id="minDate" name="minDate" required>
+            </div>
+            <div class="form-group">
+                <label for="endDate">Available until:</label>
+                <input type="date" id="maxDate" name="maxDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="photos">Upload Photos (1-10):</label>
+                <input type="file" id="photos" name="photos" accept="image/*" multiple required>
+                <small>You can upload up to 10 images.</small>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="submit-btn" id="submit-btn">Submit</button>
+                <button type="button" class="cancel-btn" onclick="cancelForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+
+        const base_url = "http://127.0.0.1:8080";
+
+        document.getElementById('photos').addEventListener('change', function () {
+            if (this.files.length > 10) {
+                alert('You can upload a maximum of 10 photos.');
+                this.value = ''; 
+            }
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', async function (event) {
+            //land
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const totalArea = document.getElementById('area').value;
+            //address
+            const streetNumber = document.getElementById('streetNumber').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            const postalCode = document.getElementById('postalCode').value;
+            //
+            const type = document.getElementById('propertyType').value.toUpperCase();
+            //
+            const costPerDay = Number(document.getElementById('costPerDay').value);
+            const minDate = document.getElementById('minDate').value;
+            const maxDate = document.getElementById('maxDate').value;
+
+            let post = {
+                land:{
+                    title: title,
+                    description: description,
+                    totalArea: totalArea,
+                    address: {
+                        streetNumber: streetNumber,
+                        street: street,
+                        city: city,
+                        state: state,
+                        postalCode: postalCode
+                    },
+                    type: type
+                },
+                costPerDay: costPerDay,
+                minDate: minDate,
+                maxDate: maxDate
+            } 
+
+            let formData = new FormData();
+            formData.append('data', new Blob([JSON.stringify(post)], { type: "application/json" }));
+
+            const files = document.getElementById('photos').files;
+            for (let index = 0; index < files.length; index++) {    
+                formData.append('files', files[index]);
+            }
+
+            createPost(formData);
+        });
+
+        async function createPost(formData) {
+            let url = base_url + "/api/post/create";
+
+            const headers = new Headers();
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+            let data = JSON.parse(sessionStorage.getItem("UserData"));
+            headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`${response.status} - ${response.statusText}`);
+                }
+
+                const result = await response.json(); 
+                alert('Form submitted successfully!');
+                cancelForm()
+                console.log('Success:', result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Введено некоректні дані: ' + error.message);
+            }
+        }
+        
+        function cancelForm() {
+            window.location.href = "/pages/post-list";
+        }
+    </script>
+</body>
+</html>

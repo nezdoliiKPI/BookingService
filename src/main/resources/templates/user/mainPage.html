@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Listings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+            display: grid;
+            place-items: center;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .filter-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #d4edda;
+            border-bottom: 1px solid #ddd;
+            border-radius: 20px;
+            margin: 10px;
+        }
+        .filter-panel h1 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            padding: 15px;
+        }
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
+            width: 100%;
+            max-width: 800px;
+        }
+        .filter-form input, .filter-form select, .filter-form button {
+            padding: 10px;
+            border: 1px solid #d4edda;
+            border-radius: 10px;
+            width: 90%;
+        }
+        .filter-form .row-group {
+            display: flex;
+        }
+        .object-container {
+            border-radius: 20px;
+            padding: 20px;
+            background-color: #d4edda;
+            width: 90%;
+        }
+        .object {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .object-left {
+            flex: 1;
+        }
+        .object-right {
+            flex-shrink: 0;
+        }
+        .object-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: black;
+        }
+        .object-description {
+            margin-bottom: 8px;
+        }
+        .object-address {
+            font-style: italic;
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .pagination button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .pagination button:disabled {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        h4 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/pages/post-list">Post List</a>
+        <a href="/pages/booking-list">Booking List</a>
+        <a href="/pages/profile">Profile</a>
+    </div>
+    <h4 class="mainLabel">Пошук нерухомості</h4>
+    <div class="filter-panel">
+        
+        <div class="filter-container">
+            <form class="filter-form" id="filter-form">
+                <input type="text" id="city" class="clearable" name="city" placeholder="Enter city">
+
+                <div class="row-group">
+                    <input type="date" id="start-date" class="clearable" name="start-date" lang="uk">
+                    <input type="date" id="end-date" class="clearable" name="end-date" lang="uk">
+                </div>
+
+                <div class="row-group">
+                    <input type="number" min="0" id="min-cost"  class="clearable" name="min-cost" placeholder="min cost">
+                    <input type="number" min="0" id="max-cost" class="clearable" name="max-cost" placeholder="max cost">
+                </div>
+
+                <div class="row-group">
+                    <input type="number" min="0" id="min-area" class="clearable" name="min-area" placeholder="min area (m²)">
+                    <input type="number" min="0" id="max-area" class="clearable" name="max-area" placeholder="max area (m²)">
+                </div>
+
+                <div class="row-group">
+                    <select id="property-type" name="property-type">
+                        <option value="">land type</option>
+                        <option value="apartment">apartment</option>
+                        <option value="house">house</option>
+                        <option value="studio">studio</option>
+                        <option value="villa">villa</option>
+                    </select>
+
+                    <select id="sort" name="sort">
+                        <option value="">sort by</option>
+                        <option value="ascending">price: low to high</option>
+                        <option value="descending">price: high to low</option>
+                        <option value="rate">rate</option>
+                    </select>
+                </div>
+
+                <div class="row-group">
+                    <button type="button" id="apply-filters">apply</button>
+                    <button type="button" id="clear-filters">clear</button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+
+    <div class="object-container" id="listings">
+    </div>
+
+    <div class="pagination">
+        <button id="prev" type="button" >&lt; Prev</button>
+        <button id="next" type="button">Next &gt;</button>
+    </div>
+
+    <script>
+        let pageNumb = 0;
+        let pageLength = 2;
+
+        const base_url = "http://127.0.0.1:8080";
+
+        displayObjects(getPage(getFilters(), pageNumb, pageLength));
+
+        async function getPage(filters, pageNumb, pageLength = 4) {
+            let params = new URLSearchParams({
+                'page-number': pageNumb,
+                'page-size': pageLength
+            });
+
+            url = base_url + '/api/post/posts/page?' + params.toString();
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: headers,
+                    body:JSON.stringify(filters)
+                });
+
+                const data = await response.json();
+                console.log(data);
+                return data;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return null;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return null;
+            }
+        }
+
+        document.getElementById('apply-filters').addEventListener('click', function() {
+            pageNumb = 0;
+
+            let div = document.getElementById('listings');
+            while (div.firstChild) {
+                div.removeChild(div.firstChild);
+            }
+            
+            displayObjects(getPage(getFilters(), pageNumb, pageLength));
+        });
+
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            var inputs = document.querySelectorAll('input.clearable');
+            inputs.forEach(function(input) {
+                input.value = '';
+            });
+        });
+
+        document.getElementById('prev').addEventListener('click', async function() {
+            if (pageNumb <= 0) {
+               return;
+            }
+
+            pageNumb = pageNumb - 1;
+
+            let div = document.getElementById('listings');
+            while (div.firstChild) {
+                div.removeChild(div.firstChild);
+            }
+            
+            displayObjects(getPage(getFilters(), pageNumb, pageLength));
+        });
+
+        document.getElementById('next').addEventListener('click', async function() {
+
+            let newData = await getPage(getFilters(), pageNumb + 1, pageLength);
+
+            if (newData == null) {
+                pageNumb = pageNumb - 1;
+                return;
+            }
+
+            pageNumb = pageNumb + 1;
+
+            let div = document.getElementById('listings');
+            while (div.firstChild) {
+                div.removeChild(div.firstChild);
+            }
+               
+            displayObjects(newData);
+        });
+
+        async function displayObjects(data) {
+            data = await data;
+
+            if (data == null) {
+                return;
+            }
+
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                // Create a container for each object
+                const container = document.createElement("div");
+                container.className = "object";
+                
+                // Await the renderObject to ensure sequential execution
+                await renderObject(item, container);
+                
+                container.addEventListener('click', function() {
+                    dataKey = "postId";
+
+                    sessionStorage.removeItem(dataKey);
+                    sessionStorage.setItem(dataKey, item.id.toString());
+                });
+
+                // Append the container to the target div
+                document.getElementById('listings').appendChild(container);
+            }
+        } 
+
+        async function renderObject(item, container) {
+            let imageUrl;
+            try {
+                const blob = await downloadPhoto(item.imageKeys[0]);
+                imageUrl = URL.createObjectURL(blob);
+            } catch (error) {
+                console.error('Failed to load image:', error);
+                imageUrl = 'path/to/default-image.jpg';
+            }
+
+            container.innerHTML = `
+                <div class="object-left">
+                    <a class="object-title" href="/pages/post">${item.land.title} (${item.land.type})</a>
+                    <div class="object-details">
+                        <strong>Score:</strong> ${item.score !== null ? item.score : 'not scored'}<br>
+                        <strong>Cost per day:</strong> $${item.costPerDay.toFixed(2)}<br>
+                        <strong>Total area:</strong> ${item.land.totalArea} (m²)<br>
+                        <strong>Available from:</strong> ${item.minDate} to ${item.maxDate}<br>
+                    </div>
+                    <div class="object-address">
+                        Address: ${item.land.address.streetNumber} ${item.land.address.street}, ${item.land.address.city}, ${item.land.address.state}, ${item.land.address.postalCode}
+                    </div>
+                </div>
+                <div class="object-right">
+                    <div>
+                        <img src="${imageUrl}" alt="Image of ${item.land.title}" style="width:200px; margin-top:8px;">
+                    </div>
+                </div>  
+            `;
+        }
+
+        function getFilters() {
+            const minCost = Number(document.getElementById('min-cost').value);
+            const maxCost = Number(document.getElementById('max-cost').value);
+
+            const minArea = Number(document.getElementById('min-area').value);
+            const maxArea = Number(document.getElementById('max-area').value);
+
+            const type = document.getElementById('property-type').value.toUpperCase();
+
+            const city = document.getElementById('city').value;
+
+            const minDate = document.getElementById('start-date').value;
+            const maxDate = document.getElementById('end-date').value;
+
+            const sortingType = document.getElementById('sort').value;
+            
+            
+            let filters = {
+                minCost,
+                maxCost,
+
+                minArea,
+                maxArea,
+
+                type,
+
+                city,
+
+                minDate,
+                maxDate,
+
+                sortingType
+            };
+
+            for (let key in filters) {
+                if (filters[key] == '') {
+                    filters[key] = null;
+                }
+            }
+
+            console.log('Filters applied:', filters);
+            return filters;
+        }
+        
+        async function downloadPhoto(key) {
+            url = base_url + '/api/post/photo?key=' + encodeURIComponent(key);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'image/jpeg'
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return await response.blob();
+        }
+    </script>
+</body>
+</html>

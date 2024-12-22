@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Listings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+            display: grid;
+            place-items: center;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .object-container {
+            border-radius: 20px;
+            padding: 20px;
+            background-color: #d4edda;
+            width: 90%;
+        }
+        .object {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .object-left {
+            flex: 1;
+        }
+        .object-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: black;
+        }
+        .object-description {
+            margin-bottom: 8px;
+        }
+        .object-address {
+            font-style: italic;
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .pagination button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .pagination button:disabled {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        h4 {
+            text-align: center;
+        }
+       
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #6d706cd3;
+            color: white;
+            border: none;
+            border-radius: 30%; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000; 
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .floating-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+        .object-center {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center; 
+            gap: 10px; 
+            height: 100%;
+            margin: 0 20px;
+        }
+        .edit-button, .delete-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .edit-button:hover {
+            background-color: #0056b3;
+        }
+        .delete-button {
+            background-color: #dc3545;
+        }
+        .delete-button:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/pages/main-page">Main Page</a>
+        <a href="/pages/booking-list">Booking List</a>
+        <a href="/pages/profile">Profile</a>
+    </div>
+    <h4 class="mainLabel">Список оголошень</h4>
+
+    <button class="floating-button" onclick="onFloatingButtonClick()">+</button>
+
+    <div class="object-container" id="listings">
+    </div>
+
+    <script>
+        const base_url = "http://127.0.0.1:8080";
+
+        getPage();
+
+        async function getPage() {
+
+            url = base_url + '/api/post/list';
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+            else{
+                window.location.assign(base_url + "/pages/login");
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const data = await response.json();
+                console.log(data);
+                displayObjects(data);
+                return data.length;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return 0;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return 0;
+            }
+        }
+
+        async function displayObjects(data) {
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                // Create a container for each object
+                const container = document.createElement("div");
+                container.className = "object";
+                
+                container.addEventListener('click', function() {
+                    dataKey = "postId";
+
+                    sessionStorage.removeItem(dataKey);
+                    sessionStorage.setItem(dataKey, item.id.toString());
+                });
+                // Await the renderObject to ensure sequential execution
+                await renderObject(item, container);
+                
+                // Append the container to the target div
+                document.getElementById('listings').appendChild(container);
+            }
+        } 
+
+        async function renderObject(item, container) {
+            let imageUrl;
+            try {
+                const blob = await downloadPhoto(item.imageKeys[0]);
+                imageUrl = URL.createObjectURL(blob);
+            } catch (error) {
+                console.error('Failed to load image:', error);
+                imageUrl = 'path/to/default-image.jpg';
+            }
+
+            container.innerHTML = `
+                <div class="object-left">
+                    <a class="object-title" href="/pages/look-post">${item.land.title} (${item.land.type})</a>
+                    <div class="object-details">
+                        <strong>Score:</strong> ${item.score !== null ? item.score : 'not scored'}<br>
+                        <strong>Cost per day:</strong> $${item.costPerDay.toFixed(2)}<br>
+                        <strong>Total area:</strong> ${item.land.totalArea} (m²)<br>
+                        <strong>Available from:</strong> ${item.minDate} to ${item.maxDate}<br>
+                        <strong>Status:</strong> ${item.postStatus.toLowerCase()}<br>
+                    </div>
+                    <div class="object-address">
+                        Address: ${item.land.address.streetNumber} ${item.land.address.street}, ${item.land.address.city}, ${item.land.address.state}, ${item.land.address.postalCode}
+                    </div>
+                </div>
+                <div class="object-center">
+                    <button class="edit-button" onclick="editItem(${item.id})">Edit</button>
+                    <button class="delete-button" onclick="deleteItem(${item.id})">Delete</button>
+                </div>
+                <div class="object-right">
+                    <div>
+                        <img src="${imageUrl}" alt="Image of ${item.land.title}" style="width:200px; margin-top:8px;">
+                    </div>
+                </div>
+            `;
+        }
+
+        async function downloadPhoto(key) {
+            url = base_url + '/api/post/photo?key=' + encodeURIComponent(key);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'image/jpeg'
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return await response.blob();
+        }
+
+        function onFloatingButtonClick() {
+            window.location.href = "/pages/post-form";
+        }
+
+        function editItem(id) {
+            dataKey = "postId";
+            sessionStorage.removeItem(dataKey);
+            sessionStorage.setItem(dataKey, id.toString());
+
+            window.location.href = "/pages/edit-post";
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Are you sure you want to delete this item?')) {
+                return;
+            }
+
+            url = base_url + '/api/post/delete?id=' + encodeURIComponent(id);
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+            else{
+                window.location.assign(base_url + "/pages/login");
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+                
+                location.reload();
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    alert('Поки ваша неруомість орендується, ви не можете видалити оголошення');
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

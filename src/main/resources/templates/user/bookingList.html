@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Listings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+            display: grid;
+            place-items: center;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            width: 100%;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .object-container {
+            border-radius: 20px;
+            padding: 20px;
+            background-color: #d4edda;
+            width: 90%;
+        }
+        .object {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .object-left {
+            flex: 1;
+        }
+        .object-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: black;
+        }
+        .object-description {
+            margin-bottom: 8px;
+        }
+        .object-address {
+            font-style: italic;
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .pagination button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .pagination button:disabled {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        h4 {
+            text-align: center;
+        }
+        .object-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/pages/post-list">Post List</a>
+        <a href="/pages/main-page">Main Page</a>
+        <a href="/pages/profile">Profile</a>
+    </div>
+    <h4 class="mainLabel">Список оренди</h4>
+
+    <div class="object-container" id="listings">
+    </div>
+
+    <script>
+        const base_url = "http://127.0.0.1:8080";
+
+        getPage();
+
+        async function getPage() {
+
+            url = base_url + '/api/booking/list';
+
+            const headers = new Headers();
+            headers.append('Content-Type', 'application/json');
+            headers.append('X-Requested-With', 'XMLHttpRequest');
+
+            if (sessionStorage.getItem("UserData") != null) {
+                let data = JSON.parse(sessionStorage.getItem("UserData"));
+                headers.append('Authorization', 'Basic ' + btoa(data.email + ':' + data.password));
+            }
+            else{
+                window.location.assign(base_url + "/pages/login");
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const data = await response.json();
+                console.log(data);
+                displayObjects(data);
+                return data.length;
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.message) {
+                    return 0;
+                } else {
+                    alert('Відбулася невідома помилку');
+                }
+                return 0;
+            }
+        }
+
+        async function displayObjects(data) {
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                // Create a container for each object
+                const container = document.createElement("div");
+                container.className = "object";
+
+                container.addEventListener('click', function() {
+                    dataKey = "postId";
+                    dataKey2 = "bookingId";
+
+                    sessionStorage.removeItem(dataKey);
+                    sessionStorage.setItem(dataKey, item.bookingDetails.postId.toString());
+
+                    sessionStorage.removeItem(dataKey2);
+                    sessionStorage.setItem(dataKey2, item.id.toString());
+                });
+                
+                // Await the renderObject to ensure sequential execution
+                await renderObject(item, container);
+                
+                // Append the container to the target div
+                document.getElementById('listings').appendChild(container);
+            }
+        } 
+
+        async function renderObject(item, container) {
+            container.innerHTML = `
+                <div class="object-left">
+                    <a class="object-title" href="/pages/booked-post">Post</a>
+                    <div class="object-details">
+                        <strong>Booking date:</strong> ${item.bookingDate}<br><br>
+                        <strong>Start date:</strong> ${item.bookingDetails.startDate}<br>
+                        <strong>End date:</strong> ${item.bookingDetails.endDate}<br><br>
+                        <strong>Days:</strong> ${item.days}<br>
+                        <strong>Total cost:</strong> ${item.totalCost}$<br><br>
+                         <strong>Status:</strong> ${item.status.toLowerCase()}<br>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
